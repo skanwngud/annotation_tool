@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from typing import Union, Optional, List
 from ultralytics import YOLO
 
-app = FastAPI()
+APP = FastAPI()
 
 IP = socket.gethostbyname(socket.gethostname())
 
@@ -16,40 +16,42 @@ model_list = {
     "small": YOLO("yolov8s.pt"),
     "medium": YOLO("yolov8m.pt"),
     "large": YOLO("yolov8l.pt"),
-    "extra": YOLO("yolov8x.pt")
+    "extra": YOLO("yolov8x.pt"),
 }
 
+
 class Input(BaseModel):
-    images: Union[bytes, List[bytes]]
+    images: List[dict]
     types: str
-    classes: Optional[Union[int], int] = None
+    classes: Optional[Union[List[int], int]] = None
     model: str
 
 
-@app.get("/")
+@APP.get("/")
 async def init():
     return {IP: "detect"}
 
 
-@app.post("/detect")
+@APP.post("/detect")
 async def detect(inp: Input):
     model = model_list[inp.model]
-    images = inp.images if isinstance(inp.images, list) else [inp.images]
-    
-    results = {
-        "bbox": []
-    }
-    
-    for bytes_string in images:
-        img_data = base64.b64decode(bytes_string)
+
+    results = {"bbox": []}
+
+    for img_info in inp.images:
+        image = bytes(img_info["image"], "utf-8")
+        width = img_info["width"]
+        height = img_info["height"]
+
+        img_data = base64.b64decode(image)
         data_bytes = np.fromstring(img_data, dtype=np.uint8)
         img = data_bytes.reshape((360, 640, 3))
         res = model(img, classes=inp.classes)[0].boxes.data.cpu().numpy().tolist()
-        
+
         results["bbox"].append(res)
-        
+
     return results
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host=IP)
+    uvicorn.run("main:APP", host=IP)
