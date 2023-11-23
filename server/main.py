@@ -12,30 +12,15 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Union, Optional, List
 
-from utils import check, scan_ip
+from utils import check, scan_ip, get_servers
 
 
-DET, SEG, POS, CLU = None, None, None, None
 IP = socket.gethostbyname(socket.gethostname())
 APP = FastAPI()
 
 
 ip_list = scan_ip(IP)
-for val in ip_list:
-    ip = list(val.keys())[0]
-    task = list(val.values())[0]
-
-    if task == "detect":
-        DET = ip
-
-    elif task == "segmentation":
-        SEG = ip
-
-    elif task == "pose":
-        POS = ip
-
-    elif task == "clustering":
-        CLU = ip
+DET, SEG, POS, CLU = get_servers(ip_list)
 
 
 class Input(BaseModel):
