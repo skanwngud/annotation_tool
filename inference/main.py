@@ -22,7 +22,7 @@ model_list = {
 class Input(BaseModel):
     images: Union[bytes, List[bytes]]
     types: str
-    classes: Optional[Union[int], int] = None
+    classes: Optional[Union[List[int], int]] = None
     model: str
 
 
