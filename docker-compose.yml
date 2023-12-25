@@ -1,0 +1,37 @@
+version: "3.9"
+services:
+  # detection:
+  #   build: ./detection
+  #   image: detection:init
+  #   networks:
+  #     - mybridge
+  #   ports:
+  #     - "8000:8000"
+  # pose:
+  #   build: ./pose
+  #   image: pose:init
+  #   networks:
+  #     - mybridge
+  #   ports:
+  #     - "8000:8000"
+  # segmentation:
+  #   build: ./segmentation
+  #   image: segmentation:init
+  #   networks:
+  #     - mybridge
+  #   ports:
+  #     - "8000:8000"
+  server:
+    build: ./server
+    image: server:init
+    networks:
+      - mybridge
+    ports:
+      - "17790:8000"
+    volumes:
+      - /home/yjh/source/annotation_tool/server:/home/users/
+    command: "python3 ./main.py"
+
+networks:
+  mybridge:
+    driver: bridge

@@ -1,7 +1,7 @@
 # inference yolo server for detect task
 
 FROM ubuntu:20.04
-LABEL version="inference:init"
+LABEL version="detection:init"
 
 RUN apt-get update -y && apt-get install sudo -y
 RUN adduser --disabled-password --gecos "" user \
@@ -23,7 +23,7 @@ RUN apt-get update -y && apt-get install -y \
     libgl1-mesa-glx \
     ffmpeg \
     libsm6 \
-    libxet6
+    libxt6
 
 RUN pip install \
     opencv-python \

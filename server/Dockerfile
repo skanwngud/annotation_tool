@@ -2,7 +2,7 @@ FROM ubuntu:20.04
 LABEL version="server:init"
 
 RUN apt-get update -y && apt-get install -y sudo
-RUN adduser --disabled-password --gecos "" suers \
+RUN adduser --disabled-password --gecos "" user \
     && echo "user:user" | chpasswd \
     && adduser user sudo \
     && echo "user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
