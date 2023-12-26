@@ -33,3 +33,4 @@ RUN pip install \
 WORKDIR /home/user/source
 
 COPY main.py /home/user/source
+COPY utils.py /home/user/source

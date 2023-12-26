@@ -2,49 +2,41 @@ version: "3"
 
 services:
   detect:
+    build: ./detect
     image: detect:init
-    volumes:
-      - volume:/mnt
     networks:
       - bridge
     command: python3 main.py
 
   pose:
+    build: ./pose
     image: pose:init
-    volumes:
-      - volume:/mnt
     networks:
       - bridge
     command: python3 main.py
 
   segmentation:
+    build: ./segmentation
     image: segmentation:init
-    volumes:
-      - volume:/mnt
     networks:
       - bridge
     command: python3 main.py
 
   clustering:
     image: clustering:init
-    volumes:
-      - volume:/mnt
     networks:
       - bridge
     command: python3 main.py
 
   server:
+    build: ./server
     image: server:init
-    volumes:
-      - volume:/mnt
     networks:
       - bridge
     ports:
       - "17780:8000"
     command: python3 main.py
 
-volumes:
-  {}
-
 networks:
-  bridge: {}
+  bridge:
+    driver: bridge

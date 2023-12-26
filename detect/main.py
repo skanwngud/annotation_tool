@@ -3,6 +3,8 @@ import socket
 import numpy as np
 import base64
 
+from collections import defaultdict
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Union, Optional, List, Tuple
@@ -35,18 +37,37 @@ async def init():
 
 @APP.post("/detect")
 async def detect(inp: Input):
+    """
+    Args:
+        inp (Input): 
+        {
+            "images": [
+                {
+                    "name": str,
+                    "image": base64,
+                    "shape": Union[List[int], Tuple[int]]
+                }
+            ],
+            "types": "detect",
+            "classes": List[int],
+            "model": str,
+            "base_color": None
+        }
+
+    Returns:
+        _type_: _description_
+    """
     model = model_list[inp.model]
 
     results = {"bbox": []}
 
     for img_info in inp.images:
         image = bytes(img_info["image"], "utf-8")
-        width = img_info["width"]
-        height = img_info["height"]
+        width, height, channel = img_info["shape"]
 
         img_data = base64.b64decode(image)
         data_bytes = np.fromstring(img_data, dtype=np.uint8)
-        img = data_bytes.reshape((360, 640, 3))
+        img = data_bytes.reshape((height, width, channel))
         res = model(img, classes=inp.classes)[0].boxes.data.cpu().numpy().tolist()
 
         results["bbox"].append(res)
