@@ -10,7 +10,7 @@ import os
 from ast import literal_eval
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Tuple
 
 from utils import check, scan_ip, get_servers
 
@@ -27,7 +27,8 @@ class Input(BaseModel):
     images: List[dict]
     types: str
     classes: Optional[Union[List[int], int]] = None
-    model: str
+    model: Optional[str] = None
+    base_color: Optional[Union[List[int], Tuple[int]]] = None
 
 
 @APP.post("/inference")

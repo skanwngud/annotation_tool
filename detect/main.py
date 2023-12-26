@@ -5,38 +5,39 @@ import base64
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Tuple
 from ultralytics import YOLO
 
-
-IP = socket.gethostbyname(socket.gethostname())
 APP = FastAPI()
 
+IP = socket.gethostbyname(socket.gethostname())
+
 model_list = {
-    "small": YOLO("yolov8s-pose.pt"),
-    "medium": YOLO("yolov8m-pose.pt"),
-    "large": YOLO("yolov8l-pose.pt"),
-    "extra": YOLO("yolov8x-pose.pt"),
+    "small": YOLO("yolov8s.pt"),
+    "medium": YOLO("yolov8m.pt"),
+    "large": YOLO("yolov8l.pt"),
+    "extra": YOLO("yolov8x.pt"),
 }
 
 
-class Query(BaseModel):
+class Input(BaseModel):
     images: List[dict]
     types: str
     classes: Optional[Union[List[int], int]] = None
     model: str
+    base_color = Optional[Union[List[int], Tuple[int]]] = None
 
 
 @APP.get("/")
 async def init():
-    return {IP: "pose"}
+    return {IP: "detect"}
 
 
-@APP.post("/pose")
-async def pose(inp: Query):
+@APP.post("/detect")
+async def detect(inp: Input):
     model = model_list[inp.model]
 
-    results = {"bbox": [], "kpts": []}
+    results = {"bbox": []}
 
     for img_info in inp.images:
         image = bytes(img_info["image"], "utf-8")
@@ -45,14 +46,10 @@ async def pose(inp: Query):
 
         img_data = base64.b64decode(image)
         data_bytes = np.fromstring(img_data, dtype=np.uint8)
-        img = data_bytes.reshape((height, width, 3))
+        img = data_bytes.reshape((360, 640, 3))
+        res = model(img, classes=inp.classes)[0].boxes.data.cpu().numpy().tolist()
 
-        res = model(img, classes=inp.classes)[0]
-        bbox = res.boxes.data
-        kpts = res.keypoints.data
-
-        results["bbox"].append(bbox.cpu().numpy().tolist())
-        results["kpts"].append(kpts.cpu().numpy().tolist())
+        results["bbox"].append(res)
 
     return results
 

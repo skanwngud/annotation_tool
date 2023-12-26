@@ -1,8 +1,10 @@
-FROM ubuntu:20.04
-LABEL version="server:init"
+# inference yolo server for detect task
 
-RUN apt-get update -y && apt-get install -y sudo
-RUN adduser --disabled-password --gecos "" suers \
+FROM ubuntu:20.04
+LABEL version="detect:init"
+
+RUN apt-get update -y && apt-get install sudo -y
+RUN adduser --disabled-password --gecos "" user \
     && echo "user:user" | chpasswd \
     && adduser user sudo \
     && echo "user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
@@ -21,14 +23,17 @@ RUN apt-get update -y && apt-get install -y \
     libgl1-mesa-glx \
     ffmpeg \
     libsm6 \
-    libxexext6
+    libxext6
 
 RUN pip install \
     opencv-python \
     opencv-contrib-python \
     fastapi \
     uvicorn \
-    requests
+    requests \
+    torch \
+    torchvision \
+    ultralytics
 
 WORKDIR /home/user/source
 

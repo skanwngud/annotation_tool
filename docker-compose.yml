@@ -1,37 +1,50 @@
-version: "3.9"
+version: "3"
+
 services:
-  # detection:
-  #   build: ./detection
-  #   image: detection:init
-  #   networks:
-  #     - mybridge
-  #   ports:
-  #     - "8000:8000"
-  # pose:
-  #   build: ./pose
-  #   image: pose:init
-  #   networks:
-  #     - mybridge
-  #   ports:
-  #     - "8000:8000"
-  # segmentation:
-  #   build: ./segmentation
-  #   image: segmentation:init
-  #   networks:
-  #     - mybridge
-  #   ports:
-  #     - "8000:8000"
-  server:
-    build: ./server
-    image: server:init
-    networks:
-      - mybridge
-    ports:
-      - "17790:8000"
+  detect:
+    image: detect:init
     volumes:
-      - /home/yjh/source/annotation_tool/server:/home/users/
-    command: "python3 ./main.py"
+      - volume:/mnt
+    networks:
+      - bridge
+    command: python3 main.py
+
+  pose:
+    image: pose:init
+    volumes:
+      - volume:/mnt
+    networks:
+      - bridge
+    command: python3 main.py
+
+  segmentation:
+    image: segmentation:init
+    volumes:
+      - volume:/mnt
+    networks:
+      - bridge
+    command: python3 main.py
+
+  clustering:
+    image: clustering:init
+    volumes:
+      - volume:/mnt
+    networks:
+      - bridge
+    command: python3 main.py
+
+  server:
+    image: server:init
+    volumes:
+      - volume:/mnt
+    networks:
+      - bridge
+    ports:
+      - "17780:8000"
+    command: python3 main.py
+
+volumes:
+  {}
 
 networks:
-  mybridge:
-    driver: bridge
+  bridge: {}

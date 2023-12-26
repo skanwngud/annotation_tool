@@ -5,7 +5,7 @@ import base64
 
 from fastapi import FastAPI
 from pydantic import BaseModel
-from typing import Union, Optional, List
+from typing import Union, Optional, List, Tuple
 from ultralytics import YOLO
 
 
@@ -25,6 +25,7 @@ class Query(BaseModel):
     types: str
     classes: Optional[Union[List[int], int]] = None
     model: str
+    base_color = Optional[Union[List[int], Tuple[int]]] = None
 
 
 @APP.get("/")
