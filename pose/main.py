@@ -25,7 +25,7 @@ class Query(BaseModel):
     types: str
     classes: Optional[Union[List[int], int]] = None
     model: str
-    base_color = Optional[Union[List[int], Tuple[int]]] = None
+    base_color: Optional[Union[List[int], Tuple[int]]] = None
 
 
 @APP.get("/")

@@ -27,7 +27,7 @@ class Input(BaseModel):
     types: str
     classes: Optional[Union[List[int], int]] = None
     model: str
-    base_color = Optional[Union[List[int], Tuple[int]]] = None
+    base_color: Optional[Union[List[int], Tuple[int]]] = None
 
 
 @APP.get("/")
@@ -59,7 +59,7 @@ async def detect(inp: Input):
     """
     model = model_list[inp.model]
 
-    results = {"bbox": []}
+    results = defaultdict(list)
 
     for img_info in inp.images:
         image = bytes(img_info["image"], "utf-8")
@@ -70,7 +70,7 @@ async def detect(inp: Input):
         img = data_bytes.reshape((height, width, channel))
         res = model(img, classes=inp.classes)[0].boxes.data.cpu().numpy().tolist()
 
-        results["bbox"].append(res)
+        results[img_info["name"]].append(res)
 
     return results
 
