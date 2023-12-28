@@ -65,7 +65,7 @@ async def detect(inp: Input):
     """
     model = YOLO(model_list[inp.model])
 
-    results = defaultdict(list)
+    results = {}
 
     for img_info in inp.images:
         image = bytes(img_info["image"], "utf-8")
@@ -78,7 +78,7 @@ async def detect(inp: Input):
         
         res = model(src, classes=inp.classes)[0].boxes.data.cpu().numpy().tolist()
 
-        results[img_info["name"]].append(res)
+        results.update({img_info["name"]: res})
 
     return results
 
