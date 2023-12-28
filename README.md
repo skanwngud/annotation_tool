@@ -66,3 +66,18 @@
   "base_color": ["values of BGR in list or tuple"]
 }
 ```
+
+### Response Body
+
+- `task`: `detect`
+
+```json
+{
+  "image name": [
+    [x1, x2, y1, y2, conf, class],
+    [x1, x2, y1, y2, conf, class],
+    ...
+  ]
+}
+
+```

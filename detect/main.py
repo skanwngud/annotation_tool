@@ -1,7 +1,13 @@
+import cv2
+import base64
+
 import uvicorn
 import socket
 import numpy as np
 import base64
+
+from PIL import Image
+from io import BytesIO
 
 from collections import defaultdict
 
@@ -15,10 +21,10 @@ APP = FastAPI()
 IP = socket.gethostbyname(socket.gethostname())
 
 model_list = {
-    "small": YOLO("yolov8s.pt"),
-    "medium": YOLO("yolov8m.pt"),
-    "large": YOLO("yolov8l.pt"),
-    "extra": YOLO("yolov8x.pt"),
+    "small": "yolov8s.pt",
+    "medium": "yolov8m.pt",
+    "large": "yolov8l.pt",
+    "extra": "yolov8x.pt",
 }
 
 
@@ -57,18 +63,20 @@ async def detect(inp: Input):
     Returns:
         _type_: _description_
     """
-    model = model_list[inp.model]
+    model = YOLO(model_list[inp.model])
 
     results = defaultdict(list)
 
     for img_info in inp.images:
         image = bytes(img_info["image"], "utf-8")
         width, height, channel = img_info["shape"]
-
-        img_data = base64.b64decode(image)
-        data_bytes = np.fromstring(img_data, dtype=np.uint8)
-        img = data_bytes.reshape((height, width, channel))
-        res = model(img, classes=inp.classes)[0].boxes.data.cpu().numpy().tolist()
+        
+        decoded_img = base64.b64decode(image)
+        bytes_img = BytesIO(decoded_img)
+        image = Image.open(bytes_img)
+        src = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
+        
+        res = model(src, classes=inp.classes)[0].boxes.data.cpu().numpy().tolist()
 
         results[img_info["name"]].append(res)
 

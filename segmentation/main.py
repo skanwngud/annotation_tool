@@ -13,10 +13,10 @@ IP = socket.gethostbyname(socket.gethostname())
 APP = FastAPI()
 
 model_list = {
-    "small": YOLO("yolov8s-seg.pt"),
-    "medium": YOLO("yolov8m-seg.pt"),
-    "large": YOLO("yolov8l-seg.pt"),
-    "extra": YOLO("yolov8x-seg.pt"),
+    "small": "yolov8s-seg.pt",
+    "medium": "yolov8m-seg.pt",
+    "large": "yolov8l-seg.pt",
+    "extra": "yolov8x-seg.pt",
 }
 
 
@@ -35,7 +35,7 @@ async def init():
 
 @APP.post("/segmentation")
 async def segmentation(inp: Query):
-    model = model_list[inp.model]
+    model = YOLO(model_list[inp.model])
 
     results = {"bbox": [], "segmentation": []}
 

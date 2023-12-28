@@ -13,10 +13,10 @@ IP = socket.gethostbyname(socket.gethostname())
 APP = FastAPI()
 
 model_list = {
-    "small": YOLO("yolov8s-pose.pt"),
-    "medium": YOLO("yolov8m-pose.pt"),
-    "large": YOLO("yolov8l-pose.pt"),
-    "extra": YOLO("yolov8x-pose.pt"),
+    "small": "yolov8s-pose.pt",
+    "medium": "yolov8m-pose.pt",
+    "large": "yolov8l-pose.pt",
+    "extra": "yolov8x-pose.pt",
 }
 
 
@@ -35,7 +35,7 @@ async def init():
 
 @APP.post("/pose")
 async def pose(inp: Query):
-    model = model_list[inp.model]
+    model = YOLO(model_list[inp.model])
 
     results = {"bbox": [], "kpts": []}
 

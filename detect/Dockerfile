@@ -33,7 +33,8 @@ RUN pip install \
     requests \
     torch \
     torchvision \
-    ultralytics
+    ultralytics \
+    loguru
 
 WORKDIR /home/user/source
 

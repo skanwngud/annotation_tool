@@ -22,11 +22,11 @@ services:
       - bridge
     command: python3 main.py
 
-  clustering:
-    image: clustering:init
-    networks:
-      - bridge
-    command: python3 main.py
+  # clustering:
+  #   image: clustering:init
+  #   networks:
+  #     - bridge
+  #   command: python3 main.py
 
   server:
     build: ./server
