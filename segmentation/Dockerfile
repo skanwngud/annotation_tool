@@ -37,5 +37,7 @@ RUN pip install \
     loguru
 
 WORKDIR /home/user/source
+CMD ["mkdir", "models"]
 
 COPY main.py /home/user/source
+COPY models /home/user/source/models
