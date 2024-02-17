@@ -2,11 +2,22 @@ import uvicorn
 import socket
 import numpy as np
 import base64
+import datetime
+
+from loguru import logger
 
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Union, Optional, List, Tuple
 from ultralytics import YOLO
+
+
+today = datetime.datetime.today()
+year = today.year
+month = today.month
+day = today.day
+
+logger.add(f"logs/{year}{str(month).zfill(2)}{str(day).zfill(2)}_pose_log.log", rotation="00:00")
 
 
 IP = socket.gethostbyname(socket.gethostname())
@@ -35,7 +46,7 @@ async def init():
 
 @APP.post("/pose")
 async def pose(inp: Query):
-    model = YOLO(model_list[inp.model])
+    model = YOLO(f"models/{model_list[inp.model]}")
 
     results = {"bbox": [], "kpts": []}
 

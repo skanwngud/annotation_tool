@@ -1,20 +1,28 @@
 import cv2
 import base64
+import datetime
 
 import uvicorn
 import socket
 import numpy as np
-import base64
 
 from PIL import Image
 from io import BytesIO
 
 from collections import defaultdict
+from loguru import logger
 
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import Union, Optional, List, Tuple
 from ultralytics import YOLO
+
+today = datetime.datetime.today()
+year = today.year
+month = today.month
+day = today.day
+
+logger.add(f"logs/{year}{str(month).zfill(2)}{str(day).zfill(2)}_detect_log.log", rotation="00:00")
 
 APP = FastAPI()
 
@@ -63,7 +71,7 @@ async def detect(inp: Input):
     Returns:
         _type_: _description_
     """
-    model = YOLO(model_list[inp.model])
+    model = YOLO(f"models/{model_list[inp.model]}")
 
     results = {}
 
@@ -76,8 +84,10 @@ async def detect(inp: Input):
         image = Image.open(bytes_img)
         src = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
         
-        res = model(src, classes=inp.classes)[0].boxes.data.cpu().numpy().tolist()
-
+        res = model(src, classes=inp.classes, verbose=False)[0].boxes.data.cpu().numpy().tolist()
+        
+        logger.info(f"{img_info['name']} result is {res}")
+        
         results.update({img_info["name"]: res})
 
     return results
