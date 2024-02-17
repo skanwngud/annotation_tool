@@ -1,5 +1,7 @@
 import requests
 
+from loguru import logger
+
 from ast import literal_eval
 from pydantic import BaseModel
 from concurrent.futures import ThreadPoolExecutor
@@ -23,6 +25,7 @@ def check(inp: BaseModel):
 
 
 def scan_ip(host_ip: str, port: int):
+    logger.info("----------IP Scan start----------")
     ip_range = [
         f"http://{'.'.join([*host_ip.split('.')[:3], str(i)])}:{port}"
         for i in range(1, 255)
