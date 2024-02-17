@@ -70,16 +70,16 @@ async def inference(inp: Input):
     }
 
     if model_type == "detect":
-        resp = requests.post(url=f"http://{DET}:8000/detect", data=json.dumps(payload))
+        resp = requests.post(url=f"http://{DET}:8000/detect", json=payload)
 
     elif model_type == "pose":
-        resp = requests.post(url=f"http://{POS}:8000/pose", data=json.dumps(payload))
+        resp = requests.post(url=f"http://{POS}:8000/pose", json=payload)
 
     elif model_type == "segmentation":
-        resp = requests.post(url=f"http://{SEG}:8000/segmentation", data=json.dumps(payload))
+        resp = requests.post(url=f"http://{SEG}:8000/segmentation", json=payload)
 
     elif model_type == "clustering":
-        resp = requests.post(url=f"http://{CLU}:8000/clustering", data=json.dumps(payload))
+        resp = requests.post(url=f"http://{CLU}:8000/clustering", json=payload)
 
     resp = literal_eval(resp.content.decode("utf-8"))
     
