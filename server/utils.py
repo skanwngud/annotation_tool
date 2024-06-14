@@ -6,10 +6,14 @@ from ast import literal_eval
 from pydantic import BaseModel
 from concurrent.futures import ThreadPoolExecutor
 
+import time
 
-def check(inp: BaseModel):
+
+def check(inp: BaseModel, task: str):
     types = inp.types
     classes = inp.classes
+
+    assert types.lower() == task.lower(), f"You're trying request to wrong task. request type is {types}, but task is {task}"
 
     assert types in [
         "detect",
@@ -36,6 +40,8 @@ def scan_ip(host_ip: str, port: int):
             return requests.get(url)
         except Exception:
             pass
+
+    time.sleep(3)
 
     with ThreadPoolExecutor(max_workers=len(ip_range)) as pool:
         response = list(pool.map(get_response, ip_range))
