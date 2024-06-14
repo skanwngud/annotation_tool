@@ -42,6 +42,7 @@ class Input(BaseModel):
     classes: Optional[Union[List[int], int]] = None
     model: str
     base_color: Optional[Union[List[int], Tuple[int]]] = None
+    conf: Optional[float] = None
 
 
 @APP.get("/")
@@ -65,7 +66,8 @@ async def detect(inp: Input):
             "types": "detect",
             "classes": List[int],
             "model": str,
-            "base_color": None
+            "base_color": None,
+            "conf": Optional[float]
         }
 
     Returns:
@@ -84,7 +86,7 @@ async def detect(inp: Input):
         image = Image.open(bytes_img)
         src = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
         
-        res = model(src, classes=inp.classes, verbose=False)[0].boxes.data.cpu().numpy().tolist()
+        res = model(src, classes=inp.classes, verbose=False, conf=inp.conf)[0].boxes.data.cpu().numpy().tolist()
         
         logger.info(f"{img_info['name']} result is {res}")
         

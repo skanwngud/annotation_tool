@@ -37,6 +37,7 @@ class Query(BaseModel):
     classes: Optional[Union[List[int], int]] = None
     model: str
     base_color: Optional[Union[List[int], Tuple[int]]] = None
+    conf: Optional[float] = None
 
 
 @APP.get("/")
@@ -59,7 +60,7 @@ async def segmentation(inp: Query):
         data_bytes = np.fromstring(img_data, dtype=np.uint8)
         img = data_bytes.reshape((height, width, 3))
 
-        res = model(img, classes=inp.classes)[0]
+        res = model(img, classes=inp.classes, conf=inp.conf)[0]
         boxes = res.boxes.data.cpu().numpy().tolist()
         segmentations = [seg.tolist() for seg in res.masks.xy]
 
