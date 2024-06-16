@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Upload Form</title>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const task = document.getElementById("task");
+        const size = document.getElementById("size");
+        const conf = document.getElementById("conf");
+        const classes = document.getElementById("classes");
+
+        // 처음 로드될 때 task 를 제외한 다른 옵션들 비활성화
+        size.disabled = true;
+        conf.disabled = true;
+        classes.disabled = true;
+        color.disabled = true;
+
+        task.addEventListener("change", function () {
+          if (task.value === "detection" || task.value === "segmentation") {
+            size.disabled = false;
+            conf.disabled = false;
+            classes.disabled = false;
+
+            color.disabled = true;
+          } else if (task.value === "clustering") {
+            color.disabled = false;
+
+            size.disabled = true;
+            classes.disabled = true;
+
+            size.value = "";
+            classes.value = "";
+          } else if (task.value === "pose_estimation") {
+            size.disabled = false;
+            conf.disabled = false;
+
+            classes.disabled = true;
+            color.disabled = true;
+
+            classes.value = "";
+            color.value = "";
+          }
+        });
+
+        console.log(classes.value);
+        console.log(conf.value);
+      });
+    </script>
+  </head>
+  <body>
+    <h1>Upload Form</h1>
+    <form action="/inference" method="post" enctype="multipart/form-data">
+      <label for="task">Task</label>
+      <select name="task" id="task" required>
+        <option value="detection">Detection</option>
+        <option value="pose_estimation">Pose Estimation</option>
+        <option value="segmentation">Segmentation</option>
+        <option value="clustering">Clustering</option>
+      </select>
+      <br /><br />
+      <label for="size">Model Size</label>
+      <select name="size" id="size">
+        <option value="small">Small</option>
+        <option value="medium">Medium</option>
+        <option value="large">Large</option>
+        <option value="extra">Extra</option>
+      </select>
+      <br /><br />
+      <label for="classes">Classes </label>
+      <select name="classes" id="classes" multiple>
+        <option value="choice1">Choice 1</option>
+        <option value="choice2">Choice 2</option>
+        <option value="choice3">Choice 3</option>
+      </select>
+      <br /><br />
+      <label for="conf">Confidence</label>
+      <input
+        type="number"
+        name="conf"
+        id="conf"
+        min="0"
+        max="1"
+        step="0.01"
+        value="0.6"
+      />
+      <br /><br />
+
+      <label for="files">Upload Images:</label>
+      <input type="file" id="files" name="files" multiple /><br /><br />
+
+      <label for="color">Choose Color:</label>
+      <input type="color" id="color" name="color" /><br /><br />
+
+      <input type="submit" value="Submit" />
+    </form>
+  </body>
+</html>

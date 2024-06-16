@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Intergrated Annotation Tool.</title>
+    <script>
+      function goBack(event) {
+        event.preventDefault(); // 폼의 기본 제출 동작을 막음
+        window.history.back(); // 이전 페이지로 이동
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Image Labeling Completed.</h1>
+    <form onsubmit="goBack(event)">
+      <input type="submit" value="back" />
+    </form>
+  </body>
+</html>

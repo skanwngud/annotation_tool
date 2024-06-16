@@ -34,5 +34,9 @@ RUN pip install \
 
 WORKDIR /home/user/source
 
+RUN mkdir templates
+
 COPY main.py /home/user/source
 COPY utils.py /home/user/source
+COPY templates/home.html /home/user/source/templates
+COPY templates/go_back.html /home/user/source/templates

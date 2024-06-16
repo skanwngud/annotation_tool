@@ -25,14 +25,15 @@ from utils import check, scan_ip, get_servers
 IP = socket.gethostbyname(socket.gethostname())
 logger.info(f"server's IP is {IP}")
 
-templates = Jinja2Templates(directory="server/templates") # html 파일 렌더링을 위한 jinja2 템플릿 초기화
+templates = Jinja2Templates(directory="templates") # html 파일 렌더링을 위한 jinja2 템플릿 초기화
 APP = FastAPI()
-APP.mount("/server/static", StaticFiles(directory="server/static"), name="static")  # 정적파일 제공 설정
 
-UPLOAD_FOLDER = "server/static/uploads"
+UPLOAD_FOLDER = "static/uploads"
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
+
+APP.mount("/static", StaticFiles(directory="static"), name="static")  # 정적파일 제공 설정
 
 ip_list = scan_ip(IP, 8000)
 DET, SEG, POS, CLU = get_servers(ip_list)
@@ -57,17 +58,7 @@ class Input(BaseModel):
 
 @APP.get("/")
 async def read_home(request: Request):
-    return templates.TemplateResponse("test.html", {"request": request})
-
-import shutil
-
-@APP.post("/upload")
-async def upload(file: UploadFile = File(...), task: str = Form(...), size: str = Form(...), classes: str = Form(...)):
-    # return "hello"
-    file_location = os.path.join(UPLOAD_FOLDER, file.filename)
-    with open(file_location, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    return {"info": f"file '{file.filename}' saved at '{file_location}'"}
+    return templates.TemplateResponse("home.html", {"request": request})
 
 
 @APP.post("/detect")
@@ -104,46 +95,62 @@ async def detect(inp: Input):
 
 
 @APP.post("/inference")
-async def inference(inp: Input):
-    model_type, classes = check(inp)
-
-    for img_info in inp.images:
-        name = img_info["name"]
-        image = bytes(img_info["image"], "utf-8")
-        width, height, channel = img_info["shape"]
-
-        decoded_img = base64.b64decode(image)
-        bytes_img = BytesIO(decoded_img)
-        image = Image.open(bytes_img)
-        image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
-
-        cv2.imwrite(f"./{os.path.basename(name)}", image)
-
+async def inference(
+    request: Request,
+    files: List[UploadFile] = File(...),
+    task: str = Form(None),
+    size: Optional[str] = Form(None),
+    classes: Optional[List[str]] = Form(None),
+    conf: float = Form(None),
+    color: Optional[str] = Form(None)
+):
     payload = {
-        "images": inp.images,
-        "types": model_type,
-        "classes": classes,
-        "model": inp.model,
+        "images": [],
+        "types": task,
+        "conf": conf
     }
-
-    if model_type == "detect":
-        resp = requests.post(url=f"http://{DET}:8000/detect", json=payload)
-
-    elif model_type == "pose":
-        resp = requests.post(url=f"http://{POS}:8000/pose", json=payload)
-
-    elif model_type == "segmentation":
-        resp = requests.post(url=f"http://{SEG}:8000/segmentation", json=payload)
-
-    elif model_type == "clustering":
-        resp = requests.post(url=f"http://{CLU}:8000/clustering", json=payload)
-
-    resp = literal_eval(resp.content.decode("utf-8"))
     
-    with open("./result.json", "w") as f:
+    if size is not None:
+        payload.update({"model": size})
+    
+    if classes is not None:
+        payload.update({"classes": classes})
+    
+    if color is not None:
+        payload.update({"base_color": color})
+    
+    for file in files:
+        file_name = file.filename
+        
+        buffer = file.file.read()
+        
+        bytes_img = BytesIO(buffer)
+        img = Image.open(bytes_img)
+        img = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB)
+        
+        payload["images"].append(
+            {
+                "name": file_name,
+                "image": buffer,
+                "shape": img.shape
+            }
+        )
+        
+    if task == "detection":
+        resp = requests.post(
+            url = f"http://{DET}:8000/detect",
+            json = payload,
+            headers = {"Content-Type": "application/json"}
+        )
+        
+        resp = literal_eval(resp.content.decode("utf-8"))
+        
+    print("response: ", resp)
+    
+    with open("./results.json", "w") as f:
         json.dump(resp, f, indent=4)
-
-    return resp
+    
+    return templates.TemplateResponse("go_back.html", {"request": request})
 
 
 if __name__ == "__main__":
