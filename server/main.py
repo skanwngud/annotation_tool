@@ -50,7 +50,7 @@ logger.info(f"""
 class Input(BaseModel):
     images: List[dict]
     types: str
-    classes: Optional[Union[List[int], int]] = None
+    classes: Optional[List[int]] = None
     model: Optional[str] = None
     base_color: Optional[Union[List[int], Tuple[int]]] = None
     conf: Optional[float] = None
@@ -61,46 +61,13 @@ async def read_home(request: Request):
     return templates.TemplateResponse("home.html", {"request": request})
 
 
-@APP.post("/detect")
-async def detect(inp: Input):
-    model_type, classes = check(inp, "detect")
-    
-    for img_info in inp.images:
-        image = bytes(img_info["image"], "utf-8")
-        
-        decoded_img = base64.b64decode(image)
-        bytes_img = BytesIO(decoded_img)
-        image = Image.open(bytes_img)
-        image = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
-        
-    payload = {
-        "images": inp.images,
-        "types": model_type,
-        "classes": classes,
-        "model": inp.model
-    }
-        
-    resp = requests.post(
-        url = f"http://{DET}:8000/detect",
-        json = payload,
-        headers = {"Content-Type": "application/json"}
-    )
-    
-    resp = literal_eval(resp.content.decode("utf-8"))
-    
-    with open("./detect_result.json", "w") as f:
-        json.dump(resp, f, indent=4)
-        
-    return resp
-
-
 @APP.post("/inference")
 async def inference(
     request: Request,
     files: List[UploadFile] = File(...),
     task: str = Form(None),
     size: Optional[str] = Form(None),
-    classes: Optional[List[str]] = Form(None),
+    classes: List[int] = Form(None),
     conf: float = Form(None),
     color: Optional[str] = Form(None)
 ):
@@ -118,38 +85,38 @@ async def inference(
     
     if color is not None:
         payload.update({"base_color": color})
-    
+        
     for file in files:
         file_name = file.filename
         
-        buffer = file.file.read()
+        image = base64.b64encode(file.file.read()).decode("utf-8")
         
-        bytes_img = BytesIO(buffer)
+        decoded_img = base64.b64decode(image)
+        bytes_img = BytesIO(decoded_img)
         img = Image.open(bytes_img)
         img = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB)
+        
+        cv2.imwrite(os.path.join(UPLOAD_FOLDER, file_name), img)
         
         payload["images"].append(
             {
                 "name": file_name,
-                "image": buffer,
-                "shape": img.shape
+                "image": image
             }
         )
         
     if task == "detection":
         resp = requests.post(
             url = f"http://{DET}:8000/detect",
-            json = payload,
+            data = json.dumps(payload),
             headers = {"Content-Type": "application/json"}
         )
         
         resp = literal_eval(resp.content.decode("utf-8"))
         
-    print("response: ", resp)
-    
     with open("./results.json", "w") as f:
         json.dump(resp, f, indent=4)
-    
+        
     return templates.TemplateResponse("go_back.html", {"request": request})
 
 
