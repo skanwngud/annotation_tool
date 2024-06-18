@@ -5,38 +5,47 @@ services:
     build: ./detect
     image: detect:init
     networks:
-      - bridge
+      bridge:
+        ipv4_address: 172.20.0.11
     command: python3 main.py
 
   pose:
     build: ./pose
     image: pose:init
     networks:
-      - bridge
+      bridge:
+        ipv4_address: 172.20.0.12
     command: python3 main.py
 
   segmentation:
     build: ./segmentation
     image: segmentation:init
     networks:
-      - bridge
+      bridge:
+        ipv4_address: 172.20.0.13
     command: python3 main.py
 
   # clustering:
+  #   build: ./clustering
   #   image: clustering:init
   #   networks:
-  #     - bridge
+  #     bridge:
+  #       ipv4_address: 172.20.0.14
   #   command: python3 main.py
 
   server:
     build: ./server
     image: server:init
     networks:
-      - bridge
+      bridge:
+        ipv4_address: 172.20.0.10
     ports:
       - "17780:8000"
     command: python3 main.py
 
 networks:
   bridge:
-    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.20.0.1/16
