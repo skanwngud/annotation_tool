@@ -9,12 +9,14 @@ import numpy as np
 from PIL import Image
 from io import BytesIO
 
-from collections import defaultdict
 from loguru import logger
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Union, Optional, List, Tuple
+from typing import Optional, List
 from ultralytics import YOLO
 
 today = datetime.datetime.today()
@@ -39,10 +41,17 @@ model_list = {
 class Input(BaseModel):
     images: List[dict]
     types: str
-    classes: Optional[Union[List[int], int]] = None
+    classes: List[int] = [range(0, 80)]
     model: str
-    base_color: Optional[Union[List[int], Tuple[int]]] = None
     conf: Optional[float] = None
+    
+
+@APP.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=jsonable_encoder({"detail": exc.errors(), "body": exc.body})
+    )
 
 
 @APP.get("/")
@@ -59,14 +68,12 @@ async def detect(inp: Input):
             "images": [
                 {
                     "name": str,
-                    "image": base64,
-                    "shape": Union[List[int], Tuple[int]]
+                    "image": base64
                 }
             ],
             "types": "detect",
             "classes": List[int],
             "model": str,
-            "base_color": None,
             "conf": Optional[float]
         }
 
@@ -79,7 +86,6 @@ async def detect(inp: Input):
 
     for img_info in inp.images:
         image = bytes(img_info["image"], "utf-8")
-        width, height, channel = img_info["shape"]
         
         decoded_img = base64.b64decode(image)
         bytes_img = BytesIO(decoded_img)
