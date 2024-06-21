@@ -1,5 +1,6 @@
 FROM ubuntu:20.04
-LABEL version="server:init"
+LABEL version="front:init"
+
 
 RUN apt-get update -y && apt-get install -y sudo
 RUN adduser --disabled-password --gecos "" user \
@@ -37,6 +38,7 @@ WORKDIR /home/user/source
 RUN mkdir templates
 
 COPY main.py /home/user/source
-COPY utils.py /home/user/source
-# COPY templates/home.html /home/user/source/templates
-# COPY templates/go_back.html /home/user/source/templates
+# COPY utils.py /home/user/source
+COPY classes.json /home/user/source
+COPY templates/select_options.html /home/user/source/templates
+COPY templates/go_back.html /home/user/source/templates

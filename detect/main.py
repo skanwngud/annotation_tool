@@ -41,7 +41,7 @@ model_list = {
 class Input(BaseModel):
     images: List[dict]
     types: str
-    classes: List[int] = [range(0, 80)]
+    classes: Optional[List[int]] = [range(0, 80)]
     model: str
     conf: Optional[float] = None
     

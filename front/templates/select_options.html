@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Upload Form</title>
+    <meta charset="UTF-8" />
+    <title>Dropdown Example</title>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         const task = document.getElementById("task");
@@ -9,7 +10,11 @@
         const conf = document.getElementById("conf");
         const classes = document.getElementById("classes");
 
+        const form = document.querySelector("form");
+
         // 처음 로드될 때 task 를 제외한 다른 옵션들 비활성화
+        task.value = "none";
+
         size.disabled = true;
         conf.disabled = true;
         classes.disabled = true;
@@ -41,17 +46,33 @@
             color.value = "";
           }
         });
-
-        console.log(classes.value);
-        console.log(conf.value);
       });
+      let lastSelectedSecondDropdown = "";
+
+      async function fetchSecondDropdownOptions() {
+        const firstDropdown = document.getElementById("task");
+        const selectedValue = firstDropdown.value;
+
+        const response = await fetch(`/get-options?value=${selectedValue}`);
+        const options = await response.json();
+
+        const secondDropdown = document.getElementById("classes");
+        secondDropdown.innerHTML = "";
+
+        options.forEach((option) => {
+          const opt = document.createElement("option");
+          opt.value = option.value;
+          opt.textContent = option.label;
+          secondDropdown.appendChild(opt);
+        });
+      }
     </script>
   </head>
   <body>
-    <h1>Upload Form</h1>
     <form action="/inference" method="post" enctype="multipart/form-data">
       <label for="task">Task</label>
-      <select name="task" id="task" required>
+      <select id="task" name="task" onchange="fetchSecondDropdownOptions()">
+        <option value="none">None</option>
         <option value="detection">Detection</option>
         <option value="pose_estimation">Pose Estimation</option>
         <option value="segmentation">Segmentation</option>
@@ -66,11 +87,9 @@
         <option value="extra">Extra</option>
       </select>
       <br /><br />
-      <label for="classes">Classes </label>
-      <select name="classes" id="classes" multiple>
-        <option value="choice1">Choice 1</option>
-        <option value="choice2">Choice 2</option>
-        <option value="choice3">Choice 3</option>
+      <label for="classes">Classes</label>
+      <select id="classes" name="classes" multiple>
+        <!-- Options will be populated here -->
       </select>
       <br /><br />
       <label for="conf">Confidence</label>

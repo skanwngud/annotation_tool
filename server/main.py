@@ -1,51 +1,39 @@
 import uvicorn
 import socket
-import base64
-import cv2
-import numpy as np
 import requests
-import json
 import os
 
-from PIL import Image
-from io import BytesIO
-
 from ast import literal_eval
-from fastapi import FastAPI, Request, File, UploadFile, Form
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, Request, status
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
 from typing import Union, Optional, List, Tuple
 
 from loguru import logger
 
-from utils import check, scan_ip, get_servers
+
+TASKS = {
+    "detection": "http://172.20.0.12:8000/detect",
+    "pose_estimation": "http://172.20.0.13:8000/pose_estimation",
+    "segmentation": "http://172.20.0.14:8000/segmentation",
+    "clustering": "http://172.20.0.15:8000/clustering"
+}
 
 
 IP = socket.gethostbyname(socket.gethostname())
 logger.info(f"server's IP is {IP}")
 
-templates = Jinja2Templates(directory="templates") # html 파일 렌더링을 위한 jinja2 템플릿 초기화
-APP = FastAPI()
+app = FastAPI()
 
 UPLOAD_FOLDER = "static/uploads"
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
-APP.mount("/static", StaticFiles(directory="static"), name="static")  # 정적파일 제공 설정
-
-ip_list = scan_ip(IP, 8000)
-DET, SEG, POS, CLU = get_servers(ip_list)
-
-logger.info(f"""
----------------------Server Information---------------------
-            Detection Server is {DET}
-            Segmentation Server is {SEG}
-            PoseEstimation Server is {POS}
-            Clustering Server is {CLU}
-------------------------------------------------------------
-            """)
+app.mount("/static", StaticFiles(directory="static"), name="static")  # 정적파일 제공 설정
 
 class Input(BaseModel):
     images: List[dict]
@@ -56,69 +44,45 @@ class Input(BaseModel):
     conf: Optional[float] = None
 
 
-@APP.get("/")
-async def read_home(request: Request):
-    return templates.TemplateResponse("home.html", {"request": request})
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(exc.body)
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=jsonable_encoder({"detail": exc.errors(), "body": exc.body})
+    )
 
-
-@APP.post("/inference")
+@app.post("/inference")
 async def inference(
     request: Request,
-    files: List[UploadFile] = File(...),
-    task: str = Form(None),
-    size: Optional[str] = Form(None),
-    classes: List[int] = Form(None),
-    conf: float = Form(None),
-    color: Optional[str] = Form(None)
+    inp: Input
 ):
-    payload = {
-        "images": [],
-        "types": task,
-        "conf": conf
-    }
+    task = inp.types
+    size = inp.model
+    classes = inp.classes
+    color = inp.base_color
+    conf = inp.conf
     
-    if size is not None:
-        payload.update({"model": size})
+    logger.info(f"""
+    ---the requested data is----
+    task: {task}
+    size: {size}
+    classes: {classes}
+    base color: {color}
+    confidence: {conf}
+    ----------------------------
+    """)
     
-    if classes is not None:
-        payload.update({"classes": classes})
+    resp = requests.post(
+        url=TASKS[task],
+        data=inp.model_dump_json(),
+        headers={"Content-Type": "application/json"}
+    )
     
-    if color is not None:
-        payload.update({"base_color": color})
-        
-    for file in files:
-        file_name = file.filename
-        
-        image = base64.b64encode(file.file.read()).decode("utf-8")
-        
-        decoded_img = base64.b64decode(image)
-        bytes_img = BytesIO(decoded_img)
-        img = Image.open(bytes_img)
-        img = cv2.cvtColor(np.array(img), cv2.COLOR_BGR2RGB)
-        
-        cv2.imwrite(os.path.join(UPLOAD_FOLDER, file_name), img)
-        
-        payload["images"].append(
-            {
-                "name": file_name,
-                "image": image
-            }
-        )
-        
-    if task == "detection":
-        resp = requests.post(
-            url = f"http://{DET}:8000/detect",
-            data = json.dumps(payload),
-            headers = {"Content-Type": "application/json"}
-        )
-        
-        resp = literal_eval(resp.content.decode("utf-8"))
-        
-    with open("./results.json", "w") as f:
-        json.dump(resp, f, indent=4)
-        
-    return templates.TemplateResponse("go_back.html", {"request": request})
+    results = {"status_code": resp.status_code, "results": literal_eval(resp.content.decode("utf-8"))}
+    
+    return results
 
 
 if __name__ == "__main__":
-    uvicorn.run(APP, host=IP)
+    uvicorn.run(app, host=IP)
