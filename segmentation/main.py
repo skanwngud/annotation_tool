@@ -1,14 +1,22 @@
-import uvicorn
-import socket
-import numpy as np
+import cv2
 import base64
 import datetime
 
+import uvicorn
+import socket
+import numpy as np
+
+from PIL import Image
+from io import BytesIO
+
 from loguru import logger
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from typing import Union, Optional, List, Tuple
+from typing import Optional, List
 from ultralytics import YOLO
 
 
@@ -21,7 +29,7 @@ logger.add(f"logs/{year}{str(month).zfill(2)}{str(day).zfill(2)}_segment_log.log
 
 
 IP = socket.gethostbyname(socket.gethostname())
-APP = FastAPI()
+app = FastAPI()
 
 model_list = {
     "small": "yolov8s-seg.pt",
@@ -31,44 +39,46 @@ model_list = {
 }
 
 
-class Query(BaseModel):
+class Input(BaseModel):
     images: List[dict]
     types: str
-    classes: Optional[Union[List[int], int]] = None
+    classes: Optional[List[int]] = None
     model: str
-    base_color: Optional[Union[List[int], Tuple[int]]] = None
+    base_color: Optional[tuple] = None
     conf: Optional[float] = None
 
 
-@APP.get("/")
-async def init():
-    return {IP: "segmentation"}
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(exc.body)
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=jsonable_encoder({"detail": exc.errors(), "body": exc.body})
+    )
 
 
-@APP.post("/segmentation")
-async def segmentation(inp: Query):
+@app.post("/segmentation")
+async def segmentation(inp: Input):
     model = YOLO(f"models/{model_list[inp.model]}")
 
-    results = {"bbox": [], "segmentation": []}
+    results = {}
 
     for img_info in inp.images:
         image = bytes(img_info["image"], "utf-8")
-        width = img_info["width"]
-        height = img_info["height"]
 
-        img_data = base64.b64decode(image)
-        data_bytes = np.fromstring(img_data, dtype=np.uint8)
-        img = data_bytes.reshape((height, width, 3))
+        decoded_img = base64.b64decode(image)
+        bytes_img = BytesIO(decoded_img)
+        image = Image.open(bytes_img)
+        src = cv2.cvtColor(np.array(image), cv2.COLOR_BGR2RGB)
+        
+        res = model(src, classes=inp.classes, conf=inp.conf)[0]
+        bbox = res.boxes.data.cpu().numpy().tolist()
+        masks = [seg.tolist() for seg in res.masks.xy]
 
-        res = model(img, classes=inp.classes, conf=inp.conf)[0]
-        boxes = res.boxes.data.cpu().numpy().tolist()
-        segmentations = [seg.tolist() for seg in res.masks.xy]
-
-        results["bbox"].append(boxes)
-        results["segmentation"].append(segmentations)
+        results.update({img_info["name"]: {"bbox": bbox, "masks": masks}})
 
     return results
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:APP", host=IP)
+    uvicorn.run("main:app", host=IP)

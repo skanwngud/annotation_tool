@@ -17,7 +17,7 @@ from loguru import logger
 
 TASKS = {
     "detection": "http://172.20.0.12:8000/detect",
-    "pose_estimation": "http://172.20.0.13:8000/pose_estimation",
+    "pose_estimation": "http://172.20.0.13:8000/pose",
     "segmentation": "http://172.20.0.14:8000/segmentation",
     "clustering": "http://172.20.0.15:8000/clustering"
 }
