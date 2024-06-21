@@ -13,17 +13,16 @@
   </head>
   <body>
     <h1>Image Labeling Completed.</h1>
-    <ul>
-      {% for name, res in response.items()%}
-      <li>
-        <h2>{{name}}</h2>
-        <p>{{res}}</p>
-      </li>
-      {%endfor%}
-    </ul>
-
     <form onsubmit="goBack(event)">
       <input type="submit" value="back" />
+      <ul>
+        {% for name, res in response.items()%}
+        <li>
+          <h2>{{name}}</h2>
+          <p>{{res}}</p>
+        </li>
+        {%endfor%}
+      </ul>
     </form>
   </body>
 </html>
