@@ -6,7 +6,7 @@ services:
     image: detect:init
     networks:
       bridge:
-        ipv4_address: 172.20.0.11
+        ipv4_address: 172.20.0.12
     command: python3 main.py
 
   pose:
@@ -14,7 +14,7 @@ services:
     image: pose:init
     networks:
       bridge:
-        ipv4_address: 172.20.0.12
+        ipv4_address: 172.20.0.13
     command: python3 main.py
 
   segmentation:
@@ -22,7 +22,7 @@ services:
     image: segmentation:init
     networks:
       bridge:
-        ipv4_address: 172.20.0.13
+        ipv4_address: 172.20.0.14
     command: python3 main.py
 
   # clustering:
@@ -36,6 +36,14 @@ services:
   server:
     build: ./server
     image: server:init
+    networks:
+      bridge:
+        ipv4_address: 172.20.0.11
+    command: python3 main.py
+
+  front:
+    build: ./front
+    image: front:init
     networks:
       bridge:
         ipv4_address: 172.20.0.10
